@@ -15,7 +15,6 @@ st.set_page_config(page_title=page_title,
                    layout=layout
                    )
 
-st.sidebar.success('Select a page above', icon="📄")
 
 hide_style = '''
             <style>
