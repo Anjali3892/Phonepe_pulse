@@ -4,9 +4,14 @@ import locale
 from dataextraction import *
 from transactions import *
 from users import *
+import plotly.express as plt
+import plotly.graph_objects as go
+import pandas as pd
+
+
 
 image = Image.open('PhonePe-Logo.png')
-page_title = 'PhonePe Pulse|PhonePe Pulse'
+page_title = 'PhonePe Pulse'
 page_icon = image
 layout = 'wide'
 
@@ -67,7 +72,7 @@ header_style = '''
              
              <nav class="navbar">
                  <div class="navbar-brand">
-                <img src="\images\PhonePeLogo.png" alt="logo">
+                <img src="D:\Data Science\Project-2\Phone-Pay.png" width="400" height="200" alt="">
                     PhonePe Pulse <span> | THE BEAT OF PROGRESS</span>
                  </div>
              </nav>
@@ -77,7 +82,7 @@ st.markdown(hide_style, unsafe_allow_html=True)
 
 st.markdown(header_style, unsafe_allow_html=True)
 
-selectbox_column, empty_column, data_column = st.columns([55,20,105])
+selectbox_column, map_column, data_column = st.columns([1.5,2,2])
 
 
 with selectbox_column:
@@ -85,18 +90,19 @@ with selectbox_column:
     st.write("<style>div.row-widget.stButton > button {color: black !important;}</style>", unsafe_allow_html=True)
 
     st.button('All India', disabled=True)
-    col4, col5 = st.columns([8, 8])
+    col4, col7 = st.columns([8, 8])
 
     with col4:
         options = st.selectbox("options", ('Transactions', 'Users'), key="options", label_visibility='collapsed')
 
+    col5, col7 = st.columns([8, 8])
     with col5:
         year = st.selectbox("year", range(2018, 2023), key="year", label_visibility='collapsed')
         
     col6, col7 = st.columns([7, 7])
 
     with col6:
-        quarter = st.selectbox("quarter", ('Q1', 'Q2', 'Q3', 'Q4'), key='quarter', label_visibility='collapsed')
+        quarter = st.selectbox("quarter", ('q1', 'q2', 'q3', 'q4'), key='quarter', label_visibility='collapsed')
 
 with data_column:
     
@@ -126,11 +132,11 @@ with data_column:
                     colored3 = f'<span style="color: #402866;font-size: 23px; font-weight: bold;">{avg_trans}</span>'
                     st.markdown(colored3, unsafe_allow_html=True)
                 
-                col10, col11 = st.columns([8,14])
+                col10, col11 = st.columns([12,12])
                     
                 with col10:
     
-                    st.markdown('<h1 style="color: #402866; font-size: 37px;">Categories</h1>', unsafe_allow_html=True)
+                    st.markdown('<h1 style="color: #402866; font-size: 37px;">Categories </h1>', unsafe_allow_html=True)
                     st.write('Recharge & bill payments')
                     st.write('Peer-to-peer payments')
                     st.write('Merchant payments')
@@ -139,7 +145,7 @@ with data_column:
                     
                 with col11:
                     locale.setlocale(locale.LC_ALL, 'en_IN')
-                    st.markdown("""<hr style="height:12.4px;border:none;color:#210d38;background-color:#210d38;" /> """, unsafe_allow_html=True)
+                    st.markdown("""<hr style="height:12.4px;border:none;color:#ffffff;background-color:#ffffff;" /> """, unsafe_allow_html=True)
                     recharge = transactions_categories(year, quarter)['Recharge & bill payments'].apply(lambda x: locale.format_string('%d', x, grouping=True)).values[0]
                     colored4 = f'<span style="color: #402866;font-size: 17px; font-weight: bold;">{recharge}</span>'
                     st.markdown(colored4, unsafe_allow_html=True)
@@ -296,4 +302,67 @@ with data_column:
                                 formatted_value = locale.format_string('%.2fL', rows / 100000, grouping=True)
                                 colored21 = f'<span style="color: #402866;font-size: 16px; font-weight: bold;">{formatted_value}</span>'
                                 st.markdown(colored21, unsafe_allow_html=True)
-   
+
+with map_column:
+    transactions = pd.read_csv(r'D:\Data Science\Project-2\CSV\geo_transactions.csv')
+    users = pd.read_csv(r'D:\Data Science\Project-2\CSV\geo_users.csv')
+
+    filtered_transactions = transactions[(transactions['Year'] == year) & (transactions['Quarter'] == quarter)]
+    filtered_users = users[(users['Year'] == year) & (users['Quarter'] == quarter)]
+    
+    if options == 'Transactions':
+        if year == year:
+            if quarter == quarter:
+                
+                geojson_file = "https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson"
+                
+                transactions['State'] = transactions['State'].str.replace('and ', '& ')
+                transactions['State'] = transactions['State'].str.replace('Andaman & Nicobar Islands', 'Andaman & Nicobar')
+                
+                figure = plt.choropleth(data_frame=filtered_transactions,
+                    geojson=geojson_file,
+                    featureidkey='properties.ST_NM',
+                    locations='State',
+                    projection='mercator',
+                    hover_data={'Transaction_count': ':,', 'Transaction_amount': ':,'},
+                    hover_name='State',
+                    color_continuous_scale=plt.colors.colorbrewer.Set2,
+                    scope='asia')
+                figure.update_geos(fitbounds = "geojson",visible=False)
+                figure.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+                figure.update_layout(width=700, height=580)
+                figure.update_layout(
+                        geo=dict(bgcolor='rgba(0,0,0,0)'),
+                        plot_bgcolor='rgba(0,0,0,0)', 
+                        )
+                        
+        st.plotly_chart(figure, use_container_width=False)
+                
+    elif options == 'Users':
+        if year == year:
+            if quarter == quarter:
+                
+                geojson_file = "https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson"
+                
+                users['State'] = users['State'].str.replace('and ', '& ')
+                users['State'] = users['State'].str.replace('Andaman & Nicobar Islands', 'Andaman & Nicobar')
+                
+                figure = plt.choropleth(data_frame=filtered_users,
+                    geojson=geojson_file,
+                    featureidkey='properties.ST_NM',
+                    locations='State',
+                    projection='mercator',
+                    color='Registered_user',
+                    hover_data={'Registered_user': ':,'},
+                    hover_name='State',
+                    color_continuous_scale=plt.colors.cyclical.Twilight,
+                    scope='asia')
+                figure.update_geos(fitbounds = "locations",visible=False)
+                figure.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+                figure.update_layout(width=500, height=550)
+                figure.update_layout(
+                    geo=dict(bgcolor='rgba(0,0,0,0)'),
+                    plot_bgcolor='rgba(0,0,0,0)', 
+                    )
+                    
+                st.plotly_chart(figure, use_container_width=False)
